@@ -1,0 +1,158 @@
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton,
+    QLineEdit, QTextBrowser, QHBoxLayout, QLabel, QScrollArea
+)
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
+
+
+class ChatbotApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("E-Commerce Chatbot Assistant")
+        self.setGeometry(100, 100, 1000, 600)
+
+        # Features and their sub-options
+        self.features_with_sub_options = {
+            "My Orders": ["Track Order", "Cancel Order", "View Past Orders"],
+            "My Account": ["Update Profile", "Change Password", "View Address"],
+            "Returns": ["Initiate Return", "Check Return Status"],
+            "Payments": ["View Payment Methods", "Add Payment Method"],
+            "Product Questions": ["Ask About Availability", "Ask About Warranty"],
+            "Something Else": ["Custom Query", "Contact Support"],
+        }
+
+        # Main Layout (Horizontal split)
+        main_layout = QHBoxLayout()
+
+        # Left Panel (Features + Chat)
+        self.left_panel = QVBoxLayout()
+
+        # Feature Section
+        self.feature_buttons_layout = QVBoxLayout()
+        self.add_feature_buttons()
+
+        feature_scroll_area = QScrollArea()
+        feature_container = QWidget()
+        feature_container.setLayout(self.feature_buttons_layout)
+        feature_scroll_area.setWidget(feature_container)
+        feature_scroll_area.setWidgetResizable(True)
+        feature_scroll_area.setFixedWidth(400)
+
+        self.left_panel.addWidget(feature_scroll_area)
+
+        # Chat Interface
+        self.chat_display = QTextBrowser(self)
+        self.chat_display.setPlaceholderText("Chat history will appear here...")
+        self.chat_display.setStyleSheet(
+            "border: 2px solid #ccc; padding: 10px; min-height: 200px; font-size: 14px;"
+        )
+        self.left_panel.addWidget(self.chat_display)
+
+        # User Input Area
+        self.user_input_layout = QHBoxLayout()
+        self.user_input = QLineEdit(self)
+        self.user_input.setPlaceholderText("Type your message here...")
+        self.user_input.setStyleSheet("padding: 8px; font-size: 14px;")
+        self.user_input_layout.addWidget(self.user_input)
+
+        send_button = QPushButton("Send")
+        send_button.clicked.connect(self.handle_user_message)
+        self.user_input_layout.addWidget(send_button)
+
+        self.left_panel.addLayout(self.user_input_layout)
+
+        main_layout.addLayout(self.left_panel, stretch=1)
+
+        # Right Panel (Background image)
+        self.right_panel = QLabel()
+        pixmap = QPixmap("image.png")  # Replace with the path to your image
+        if not pixmap.isNull():
+            self.right_panel.setPixmap(pixmap)
+            self.right_panel.setScaledContents(True)
+        else:
+            self.right_panel.setText("Image not found")
+            self.right_panel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        main_layout.addWidget(self.right_panel, stretch=2)
+
+        # Central Widget
+        container = QWidget()
+        container.setLayout(main_layout)
+        self.setCentralWidget(container)
+
+    def add_feature_buttons(self):
+        """
+        Add feature buttons and their sub-options in a vertical layout.
+        """
+        for feature, sub_options in self.features_with_sub_options.items():
+            # Add Feature Button
+            feature_button = QPushButton(feature)
+            feature_button.setStyleSheet("font-weight: bold; margin: 5px 0;")
+            feature_button.clicked.connect(lambda _, f=feature: self.show_sub_options(f))
+            self.feature_buttons_layout.addWidget(feature_button)
+
+            # Add Sub-option Buttons
+            for sub_option in sub_options:
+                sub_button = QPushButton(f"  - {sub_option}")
+                sub_button.setStyleSheet("text-align: left; padding-left: 15px; font-size: 12px;")
+                sub_button.clicked.connect(lambda _, s=sub_option: self.show_sub_option_detail(s))
+                self.feature_buttons_layout.addWidget(sub_button)
+
+    def show_sub_options(self, feature):
+        """
+        Display sub-options for the selected feature in the chat interface.
+        """
+        self.chat_display.append(f"<b>You selected:</b> {feature}")
+        self.chat_display.append("<b>Chatbot:</b> Here are the available options:")
+        for sub_option in self.features_with_sub_options[feature]:
+            self.chat_display.append(f" - {sub_option}")
+
+    def show_sub_option_detail(self, sub_option):
+        """
+        Display details about the selected sub-option in the chat interface.
+        """
+        self.chat_display.append(f"<b>You selected sub-option:</b> {sub_option}")
+        self.generate_bot_response(sub_option)
+
+    def handle_user_message(self):
+        """
+        Process user input and generate a response.
+        """
+        user_message = self.user_input.text().strip()
+        if user_message:
+            self.chat_display.append(f"<b>You:</b> {user_message}")
+            self.generate_bot_response(user_message)
+            self.user_input.clear()
+
+    def generate_bot_response(self, message):
+        """
+        Generate a response based on the selected sub-option or user input.
+        """
+        responses = {
+            "Track Order": "Here are your active orders:\n- ORD001: Smartphone - Shipped\n- ORD003: Headphones - In Transit",
+            "Cancel Order": "Please provide the Order ID of the product you want to cancel.",
+            "View Past Orders": "Your past orders are:\n- ORD002: Laptop\n- ORD004: Smartwatch",
+            "Update Profile": "You can update your profile in the account settings.",
+            "Change Password": "To change your password, go to the account settings.",
+            "View Address": "Your saved address is: Premnagar, Dehradun (28007).",
+            "View Payment Methods": "Your available payment methods are:\n- Credit Card\n- Debit Card\n- UPI\n- Net Banking\n- Cash on Delivery",
+            "Add Payment Method": "To add a payment method, go to the Payments section in your account.",
+            "Ask About Availability": "All products are in stock except the Laptop (ORD002).",
+            "Ask About Warranty": "Warranty details:\n- Smartphone: 1 Year\n- Headphones: 6 Months\n- Smartwatch: 1 Year",
+            "Initiate Return": "Please provide the Order ID for the product you'd like to return.",
+            "Check Return Status": "There are no active return requests currently.",
+            "Custom Query": "Please describe your query.",
+            "Contact Support": "Connecting you to a support agent...",
+        }
+
+        response = responses.get(message, "I'm here to assist you with any questions!")
+        self.chat_display.append(f"<b>Chatbot:</b> {response}")
+
+
+if __name__ == "__main__":
+    import sys
+    app = QApplication(sys.argv)
+    window = ChatbotApp()
+    window.show()
+    sys.exit(app.exec())
